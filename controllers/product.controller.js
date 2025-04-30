@@ -19,7 +19,7 @@ const addProduct = asyncHandler(
       case !req?.file?.filename:
         return res.status(400).json({ status: FAIL, message: "Image is required" })
       case !req.body:
-        return error("All fields are required") 
+        return error("Product Information are required") 
       case !name:
         return error("Name is required") 
       case !discription:
