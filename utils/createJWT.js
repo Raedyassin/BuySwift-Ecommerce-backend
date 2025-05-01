@@ -6,7 +6,8 @@ const generateJWT = (res,userId) => {
   res.cookie("jwt", token, {
     httpOnly: true,
     secure: process.env.NODE_EMV !== "develpment",
-    sameSite: "strict",
+    // sameSite: "strict",
+    sameSite: "none",
     maxAge: 24 * 60 * 60 * 1000
   })
 }
