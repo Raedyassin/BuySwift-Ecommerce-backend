@@ -29,8 +29,12 @@ const app = express()
 
 // app.use(cors())
 app.use(cors({
-  origin: 'https://cloud-dream-68hvq4h5m-raedyassins-projects.vercel.app/', // allow only your frontend
-  credentials: true, // if you're using cookies or auth
+  origin: function (origin, callback) {
+    // allow requests with no origin (like mobile apps or curl) or any origin
+    if (!origin) return callback(null, true);
+    return callback(null, true);
+  },
+  credentials: true
 }));
 
 app.use(express.json())
