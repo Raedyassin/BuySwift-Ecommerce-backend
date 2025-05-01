@@ -4,7 +4,7 @@ import 'dotenv/config'
 import path from 'path'
 import cookieParser from 'cookie-parser'
 import multer from "multer";
-
+import cors from 'cors'
 // import cors from 'cors'
 
 // routes
@@ -26,6 +26,13 @@ const PORT = process.env.PORT || 5222
 
 connectDB();
 const app = express()
+
+// app.use(cors())
+app.use(cors({
+  origin: 'https://cloud-dream-68hvq4h5m-raedyassins-projects.vercel.app/', // allow only your frontend
+  credentials: true, // if you're using cookies or auth
+}));
+
 app.use(express.json())
 app.use(express.urlencoded({ extended: true }))
 app.use(cookieParser());

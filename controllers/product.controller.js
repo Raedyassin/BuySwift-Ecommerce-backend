@@ -466,16 +466,16 @@ const fetchAllProducts = asyncHandler(
 const fetchHomeProducts = asyncHandler(
   async (req, res, next) => {
     const pageSize = req.query.limit ? +req.query.limit : 12;
-    const newProducts = await Product.find().sort({ createdAt: -1 })
+    const newProducts = await Product.find().select("-updatedAt -__v -reviews").sort({ createdAt: -1 })
       .limit(pageSize)
 
-    const topRatingProducts = await Product.find().sort({ rating: -1 })
+    const topRatingProducts = await Product.find().select("-updatedAt -__v -reviews").sort({ rating: -1 })
       .limit(pageSize)
 
-    const topSoldProducts = await Product.find().sort({ sold: -1 })
+    const topSoldProducts = await Product.find().select("-updatedAt -__v -reviews").sort({ sold: -1 })
       .limit(pageSize)
 
-    const topDiscountProducts = await Product.find().sort({ discount: -1 })
+    const topDiscountProducts = await Product.find().select("-updatedAt -__v -reviews").sort({ discount: -1 })
       .limit(pageSize)
 
     res.json({
