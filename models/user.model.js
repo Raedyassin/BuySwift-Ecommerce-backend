@@ -16,6 +16,10 @@ const UserShema = new Schema({
     type: String,
     required: true,
   },
+  isSubscribedToNewsletter: {
+    type: Boolean,
+    default: true,
+  },
   isAdmin: {
     type: Boolean,
     required: true,

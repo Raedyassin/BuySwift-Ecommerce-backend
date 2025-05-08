@@ -125,7 +125,6 @@ const updateProduct = asyncHandler(async (req, res) => {
   res.json({ status: SUCCESS, data: { product } });
 });
 
-
 const deleteProduct = asyncHandler(
   async (req, res, next) => {
     const { id } = req.params;

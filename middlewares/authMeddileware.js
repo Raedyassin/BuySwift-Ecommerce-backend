@@ -16,7 +16,7 @@ const authenticate = asyncHandler(async (req, res, next) => {
       return next(new AppError(401, FAIL, "Not authorized, token invalid."));
     }
   }
-  next(new AppError(401,FAIL,"Not authorized, token is require."))
+  next(new AppError(401, FAIL, "Not authorized, token is require."))
 })
 
 // check if user is authenticated for routes that don't require authentication
@@ -25,13 +25,9 @@ const authenticate = asyncHandler(async (req, res, next) => {
 const ifAuthenticate = asyncHandler(async (req, res, next) => {
   const token = req.cookies?.jwt;
   if (token) {
-    try {
-      const tokenDecrypt = jwt.verify(token, process.env.JWT_SEKRYT);
-      req.user = await User.findById(tokenDecrypt.userId).select("-password -createdAt -updatedAt -__v");
-      return next()
-    } catch (err) {
-      return next(new AppError(500, ERROR, "Internal server error."));
-    }
+    const tokenDecrypt = jwt.verify(token, process.env.JWT_SEKRYT);
+    req.user = await User.findById(tokenDecrypt.userId).select("-password -createdAt -updatedAt -__v");
+    return next()
   }
   next()
 })

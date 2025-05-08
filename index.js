@@ -14,7 +14,7 @@ import productRoutes from './routers/product.routes.js'
 // import uploadRoutes from './routers/upload.routes.js'
 // import uploadUserImgRoutes from './routers/uploadUser.routes.js'
 import dashboardRoutes from './routers/dashboard.routes.js'
-
+import newsletterRoutes from './routers/newsletter.routes.js'
 import orderRoutes from './routers/order.routes.js'
 import paymentRoutes from './routers/paypalPayment.routes.js'
 
@@ -49,6 +49,7 @@ app.use('/api/products', productRoutes)
 app.use('/api/order', orderRoutes)
 app.use('/api/payment', paymentRoutes)
 app.use('/api/dashboard', dashboardRoutes)
+app.use('/api/newsletter', newsletterRoutes)
 
 const __dirname = path.resolve()
 app.use("/uploads", express.static(path.join(__dirname, 'uploads')))

@@ -7,6 +7,7 @@ import bycrypt from "bcryptjs"
 import generateJWT from "../utils/createJWT.js";
 import asyncHandler from "../middlewares/asyncHandler.js"
 import mongoose from "mongoose";
+import NewsletterSubscriber from "../models/newsletterSubscriber.model.js";
 
 
 const createUser = asyncHandler(async (req, res, next) => {
@@ -14,6 +15,10 @@ const createUser = asyncHandler(async (req, res, next) => {
   const existUser = await User.findOne({ email });
   if (existUser) {
     return res.status(409).json({ status: FAIL, message: "Email already exists" })
+  }
+  const areadySubscribed = await NewsletterSubscriber.findOne({ email });
+  if (areadySubscribed) {
+    await NewsletterSubscriber.deleteOne({ email });
   }
   const hashPassword = await bycrypt.hash(password, 10);
   const newUser = new User({
@@ -32,7 +37,8 @@ const createUser = asyncHandler(async (req, res, next) => {
           username: newUser.username,
           email: newUser.email,
           isAdmin: newUser.isAdmin,
-          img: newUser.img
+          img: newUser.img,
+          isSubscribedToNewsletter: newUser.isSubscribedToNewsletter
         }
       }
     })
@@ -48,15 +54,15 @@ const loginUser = asyncHandler(async (req, res, next) => {
     const passwordValid = await bycrypt.compare(password, UserExist.password)
     if (passwordValid) {
       generateJWT(res, UserExist._id);
-
       return res.status(200).json({
-        status: SUCCESS, data: { 
-          user: { 
+        status: SUCCESS, data: {
+          user: {
             _id: UserExist._id,
             username: UserExist.username,
             email: UserExist.email,
             isAdmin: UserExist.isAdmin,
-            img: UserExist.img
+            img: UserExist.img,
+            isSubscribedToNewsletter: UserExist.isSubscribedToNewsletter,
           }
         }
       });
@@ -66,7 +72,7 @@ const loginUser = asyncHandler(async (req, res, next) => {
 })
 
 const logoutUser = asyncHandler(async (req, res, next) => {
-  res.cookie("jwt","", {
+  res.cookie("jwt", "", {
     httpOnly: true,
     secure: process.env.NODE_EMV !== "develpment",
     sameSite: "strict",
@@ -101,7 +107,7 @@ const getAllUsers = asyncHandler(async (req, res, next) => {
   if (createdAt === "undefined") {
     createdAt = "";
   }
-  
+
   const skip = (page - 1) * pageSize;
   const filter = {};
 
@@ -119,7 +125,7 @@ const getAllUsers = asyncHandler(async (req, res, next) => {
       $gte: date,                // Start of day (e.g., 2025-03-18 00:00:00)
       $lt: new Date(date.getTime() + 24 * 60 * 60 * 1000), // Start of next day (2025-03-19 00:00:00)
     };
-  } 
+  }
   // take selected fields value one only 
   if ((email && name) || (id && email) || (name && id)) {
     return res.status(400).json({ status: "FAIL", data: { title: "Invalid query parameters we only support one query at a time (email, name, id) one at a time" } });
@@ -133,17 +139,17 @@ const getAllUsers = asyncHandler(async (req, res, next) => {
   }
   if (id && id.trim() !== "") {
     if (!mongoose.Types.ObjectId.isValid(id)) {
-      return res.status(400).json({ status: "FAIL", message: "Invalid id"  });
+      return res.status(400).json({ status: "FAIL", message: "Invalid id" });
     }
     filter._id = id;
   }
-  
+
   const usersCount = await User.countDocuments(filter);
   const users = await User.find(filter)
-  .select("-__v -updatedAt -password")
-  .limit(pageSize + 1)
-  .skip(skip)
-  .sort({ createdAt: -1 });
+    .select("-__v -updatedAt -password")
+    .limit(pageSize + 1)
+    .skip(skip)
+    .sort({ createdAt: -1 });
 
   const hasNextPage = users.length > pageSize;
   if (hasNextPage) {
@@ -162,14 +168,17 @@ const getAllUsers = asyncHandler(async (req, res, next) => {
 })
 
 const updateCurrentUserProfile = asyncHandler(async (req, res, next) => {
-  const id  = req.user._id;
-  const { username, email, password } = req.body;
+  const id = req.user._id;
+  const { username, email, password, isSubscribedToNewsletter } = req.body;
   const user = await User.findById(id).select("-password -__v");
   if (user) {
     user.username = username || user.username;
     user.email = email || user.email;
     if (password) {
       user.password = await bycrypt.hash(password, 10);
+    }
+    if (isSubscribedToNewsletter!== undefined && isSubscribedToNewsletter !== null) {
+      user.isSubscribedToNewsletter = Boolean(isSubscribedToNewsletter);
     }
     try {
       await user.save();
@@ -199,14 +208,14 @@ const updateUserImage = asyncHandler(async (req, res, next) => {
 
   // Delete old image if it exists
   if (user.img && user.img.split("/").pop() !== "defaultImage.png") {
-    const oldImagePath = path.join(process.cwd(), "uploads/user/" +user.img.split("/").pop());
+    const oldImagePath = path.join(process.cwd(), "uploads/user/" + user.img.split("/").pop());
     try {
       await fs.unlink(oldImagePath);
     } catch (err) {
       return res.status(500).json({ status: FAIL, message: "Server error" });
     }
   }
-  user.img = imageUrl;  
+  user.img = imageUrl;
   await user.save();
 
   res.status(200).json({ status: SUCCESS, data: { user } });
@@ -252,10 +261,10 @@ const updateUserByIdByAdmin = asyncHandler(async (req, res, next) => {
     if (user.isAdmin) {
       return next(new AppError(400, FAIL, "Can't update admin user"))
     }
-    if(user.email === req.body.email) {
+    if (user.email === req.body.email) {
       return next(new AppError(400, FAIL, "Email already exists"))
     }
-    if(user.username === req.body.username) {
+    if (user.username === req.body.username) {
       return next(new AppError(400, FAIL, "Username already exists"))
     }
     try {
@@ -266,11 +275,11 @@ const updateUserByIdByAdmin = asyncHandler(async (req, res, next) => {
     }
   }
   next(new AppError(404, FAIL, "User not found"))
-})  
+})
 
 const makeAsAdmin = asyncHandler(async (req, res, next) => {
   const user = await User.findById(req.params.id).select("-password -__v");
-  if(user?.isAdmin) {
+  if (user?.isAdmin) {
     return next(new AppError(400, FAIL, "User is already admin"))
   }
   if (user) {
@@ -282,9 +291,17 @@ const makeAsAdmin = asyncHandler(async (req, res, next) => {
 })
 
 export {
-  createUser, loginUser, logoutUser, getAllUsers,
-  updateCurrentUserProfile, getCurrentUserProfile,
-  deleteUserByIdByAdmin, getUserByIdByAdmin,
-  updateUserByIdByAdmin, deleteUserBySelf,
-  makeAsAdmin, updateUserImage
+  createUser,
+  loginUser,
+  logoutUser,
+  deleteUserBySelf,
+  updateCurrentUserProfile,
+  getCurrentUserProfile,
+  updateUserImage,
+  
+  getAllUsers,
+  deleteUserByIdByAdmin,
+  getUserByIdByAdmin,
+  updateUserByIdByAdmin,
+  makeAsAdmin,
 }
