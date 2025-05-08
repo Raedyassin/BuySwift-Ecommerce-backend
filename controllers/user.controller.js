@@ -212,8 +212,13 @@ const updateUserImage = asyncHandler(async (req, res, next) => {
     try {
       await fs.unlink(oldImagePath);
     } catch (err) {
-      return res.status(500).json({ status: FAIL, message: "Server error" });
+      if (err.code === 'ENOENT') {
+        console.log(`File not found in change user image: ${oldImagePath}`);
+      } else {
+        return res.status(500).json({ status: FAIL, message: "Server error" });
+      }
     }
+
   }
   user.img = imageUrl;
   await user.save();
